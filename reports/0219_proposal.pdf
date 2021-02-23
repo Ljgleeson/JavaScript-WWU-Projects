@@ -1,0 +1,47 @@
+CSCI 480 - Final Project Proposal
+Team Members: Daniel Shtunyuk, Liam Gleeson, Cole DeMaris
+Project Manager: Liam Gleeson
+February 18, 2021
+
+Final deliverable:
+	The final deliverable will be an implementation of Animations in JavaScript and WebGL with a rocket ship flying through space. The scene will have in a starry background with a rocket ship in the center as planets and stars fly by the rocket ship, with animations moving the rocket ship slightly around, rocket flame expanding and contracting in size. It will be accessed and visible on a webpage. We will try to also implement various normal/displacement maps onto the surface of different planets, if we do have extra time near the end.
+Milestone 1 deliverable: 
+	The first milestone will have all the models (rocket ship, planets, stars, sun) generated and placed into the scene and making sure that the materials, textures, and placement of the models are in the scene. The correct colors and materials will be added to each model. A light source will be placed in the scene, which is the sun, and it will light up all the models in the scene. The background will be the color black for the time being.
+Milestone 2 deliverable:
+	The second milestone will have animations added to the rocket ship, the stars and planets flying by the rocket, and the rocket flame as well. The background will be an image of stars in the background, if we can create a way to apply a night sky image in a skybox-like form to the scene. We want to have the background image animated in some way as well, to appear as if the distant stars are scintillating by getting brighter and darker, or moving slowly across space.
+
+Roadmap:
+	Milestone 1 Roadmap:
+Liam: Create the meshes/.obj files of the rocket ship, planets, and stars. Add the light source for the sunlight.
+Daniel: Set up the scene and camera so models can be placed and rendered into the scene. Create the webpage for the project.
+Cole: Create materials/shaders for the different objects and implement code to get the materials rendered.
+	Milestone 2 Roadmap:
+Liam: Learn animation. Add animation for the rocket ship movement and flame size. 
+Daniel: Learn animation. Add animation for the planets, and moons rotating around the planet.
+Cole: Learn animation. Create a skybox for the starry background, using an image or tiny stars far away. (This is something we want to explore) Create the movement path for the rocket around 3 or some planets in the scene.
+	Final Roadmap:
+Liam: Learn how to add Displacement/Normal map to the planet surface.
+Daniel: Add a ring around a planet, texture the ring, and have it spin around.
+Cole: Learn how to add Displacement/Normal map to the planet surface.
+
+
+Possible ideas for Computer Graphics project:
+Asteroids implemented in WebGL (will need Javascript, might be too big of scope)
+Still image of landscape/cityscape with
+Create a scene (Taj Mahal, Pyramid) with lighting and small animations of birds, people taking pictures with flash, etc.
+(This idea) Rocket in space, image starry night background, animating plants flying by the rocket
+Required: Generating meshes, import .obj files into WebGL, Directional light (Sun far away behind camera, lighting up the rocket and planets as they pass by the rocket), Animating rocket flame, animating planets moving by rocket, rocket centered near middle of viewport moving up and down slightly.
+NIce to have: add subtle camera movements for effect, particles emitting from the flame of a rocket, normal/displacement maps on the planets.
+
+
+Substantial extensions to A1, A2, or A3:
+Mesh processing tools/algorithms
+Advanced WebGL shaders
+
+Implementation of a topic covered (or to be covered) in class:
+Animation
+Interactive manipulation and editing of 3D or 2D objects
+
+Interactive educational visualizations/demos:
+Ray tracing
+
