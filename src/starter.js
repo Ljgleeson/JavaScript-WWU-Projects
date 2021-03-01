@@ -38,6 +38,32 @@ function initialize(canvasId) {
 
     var scene = new createScene(canvas, gl);
 
+    //This section handles the mouse drag panning
+    var mouseDown = false;
+    var lastMouseX, lastMouseY;
+    var mouseMoveListener = function(event) {
+        scene.dragCamera(event.screenX - lastMouseX, event.screenY - lastMouseY);
+        lastMouseX = event.screenX;
+        lastMouseY = event.screenY;
+    };
+    //What to do if click pressed
+    canvas.addEventListener('mousedown', function(event) {
+        if (!mouseDown && event.button == 0) {
+            mouseDown = true;
+            lastMouseX = event.screenX;
+            lastMouseY = event.screenY;
+            document.addEventListener('mousemove', mouseMoveListener);
+        }
+        event.preventDefault();
+    });
+    //What to do if click released
+    document.addEventListener('mouseup', function(event) {
+        if (mouseDown && event.button == 0) {
+            mouseDown = false;
+            document.removeEventListener('mousemove', mouseMoveListener);
+        }
+    });
+
     //This is the main render loop
     var renderLoop = function() {
         scene.render(canvas, gl, renderWidth, renderHeight);
@@ -50,19 +76,25 @@ function initialize(canvasId) {
 
 /*Pass different shader source code to allow multiple shaders in a single scene I think
   UVS are defaulted to null until later*/
-var ShadedTriangleMesh = function(gl, vertexPositions, vertexNormals, indices, vertexSource, fragmentSource, vertexUVs = null) {
+var ShadedTriangleMesh = function(gl, vertexPositions, vertexUVs, vertexNormals, indices, vertexSource, fragmentSource) {
     //This will be passed as a paramter to gl.drawElements in ObjectMesh.prototype.render
     this.indexCount = indices.length;
     // Create OpenGL buffers for the vertex, uvs, normals, and index data of the triangle mesh as needed
     this.positionVbo = createVertexBuffer(gl, vertexPositions);
-    this.normalVbo = createVertexBuffer(gl, vertexNormals);
+    if (vertexNormals != null)
+      this.normalVbo = createVertexBuffer(gl, vertexNormals);
+    if (vertexUVs != null)
+      this.uvVbo = createVertexBuffer(gl,vertexUVs);
     this.indexIbo = createIndexBuffer(gl, indices);
     //Create the shader program for this object
     this.shaderProgram = createShaderProgram(gl, vertexSource, fragmentSource);
 }
 
 //Reference ShadedTriangleMesh.prototype.render in task5/6/7 for help
-ShadedTriangleMesh.prototype.render = function(gl, model, view, projection) {
+/*A different mesh.render method is needed if:
+        different matrix/uniforms are needed. This is probably fixed by
+        looping over a list of necesary inputs or something*/
+ShadedTriangleMesh.prototype.renderSphere = function(gl, model, view, projection) {
     //Bind shader program
     gl.useProgram(this.shaderProgram);
 
@@ -120,18 +152,74 @@ ShadedTriangleMesh.prototype.render = function(gl, model, view, projection) {
     //Draw the mesh
     gl.drawElements(gl.TRIANGLES, this.indexCount, gl.UNSIGNED_SHORT, 0);
 }
+//This is a variant of the render function that uses textures
+ShadedTriangleMesh.prototype.render = function(gl, model, view, projection) {
+    //Bind shader program
+    gl.useProgram(this.shaderProgram);
+    //Generate any desired uniforms
+    var modelViewProjection = new SimpleMatrix();
+    modelViewProjection = SimpleMatrix.multiply(SimpleMatrix.inverse(view),model);
+    modelViewProjection = SimpleMatrix.multiply(projection,modelViewProjection);
+
+    gl.uniformMatrix4fv(gl.getUniformLocation(this.shaderProgram, "ModelViewProjection"), false, modelViewProjection.transpose().m);
+    gl.uniformMatrix4fv(gl.getUniformLocation(this.shaderProgram, "Model"), false, model.transpose().m);
+
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexIbo);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.positionVbo);
+    var positionAttrib = gl.getAttribLocation(this.shaderProgram, "Position");
+    if (positionAttrib >= 0) {
+        gl.enableVertexAttribArray(positionAttrib);
+        gl.vertexAttribPointer(positionAttrib, 3, gl.FLOAT, false, 0, 0);
+    }
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.uvVbo);
+    var textCoordAttrib = gl.getAttribLocation(this.shaderProgram, "UV");
+    if (textCoordAttrib >= 0) {
+        gl.enableVertexAttribArray(textCoordAttrib);
+        gl.vertexAttribPointer(textCoordAttrib, 2, gl.FLOAT, false, 0, 0);
+    }
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.normalVbo);
+    var normalAttrib = gl.getAttribLocation(this.shaderProgram, "Normal");
+    if (normalAttrib >= 0) {
+        gl.enableVertexAttribArray(normalAttrib);
+        gl.vertexAttribPointer(normalAttrib, 3, gl.FLOAT, true, 0, 0);
+    }
+    //Create textures for each image map (FIX: currently only one works at a time for some reason as of now)
+      //This is for the diffuse map
+    var diffMap = gl.createTexture();
+    createTexture(gl, diffMap, "one", gl.TEXTURE0);
+
+    gl.drawElements(gl.TRIANGLES, this.indexCount, gl.UNSIGNED_SHORT, 0);
+    //gl.bindTexture(gl.TEXTURE_2D, null);
+}
+//This isnt working for mulitple active textures,
+//This function creates a GL 2D map from an image file
+//elementID: The id name of imported image in index.html
+//textureNum
+function createTexture(gl, map, elementID, textureNum) {
+    gl.bindTexture(gl.TEXTURE_2D, map);
+    //Below texParameteri's are changeable in the render loop
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, document.getElementById(elementID));
+    gl.activeTexture(textureNum);
+}
 
 var createScene = function(canvas, gl) {
     //Store any attributes relevant to calculations
-    this.cameraAngle = 0;
+    this.cameraAngleY = 0;
+    this.cameraAngleX = 0;
     //Render each object as a mesh with ObjectMesh()
       //this.rocket = new ObjectMesh()
       //this.planet1 = new ObjectMesh()
       //... etc
 
-    //Change Scene objects here 
-    this.sphereMesh = new ShadedTriangleMesh(gl, SpherePositions, SphereNormals, SphereTriIndices, VertexSource, FragmentSource);
-    this.cubeMesh = new ShadedTriangleMesh(gl, CubePositions, CubeNormals, CubeIndices, VertexSource, FragmentSource);
+    //Change Scene objects here
+    this.sphereMesh = new ShadedTriangleMesh(gl, SpherePositions, null, SphereNormals, SphereTriIndices, VertexSource, FragmentSource);
+    this.cubeMesh = new ShadedTriangleMesh(gl, CubePositions, CubeUVs, CubeNormals, CubeIndices, TextureVertShader, TextureFragShader, CubeNormMap);
 
     gl.enable(gl.DEPTH_TEST);
 }
@@ -146,16 +234,24 @@ createScene.prototype.render = function(canvas, gl, w, h) {
     //Create and/or access all transfomation matrices
       //proj, and all view, rotation, and model matrices
     var projection = SimpleMatrix.perspective(45, w/h, 0.1, 100);
-    var view = SimpleMatrix.rotate(this.cameraAngle, 1, 0, 0).multiply(
-        SimpleMatrix.translate(0, 0, 6));
+    //view is rotated by camera angles about x and y here
+    var view = SimpleMatrix.rotate(this.cameraAngleX, 0, 1, 0).multiply(
+        SimpleMatrix.rotate(this.cameraAngleY, 1, 0, 0).multiply(
+        SimpleMatrix.translate(0, 1, 9)));
+
     var rotation = SimpleMatrix.rotate(Date.now()/25, 0, 1, 0);
     var cubeModel = SimpleMatrix.translate(-1.8, 0, 0).multiply(rotation);
     var sphereModel = SimpleMatrix.translate(1.8, 0, 0).multiply(rotation).multiply(SimpleMatrix.scale(1.2, 1.2, 1.2));
 
     //Change objects rendered in the scene
     //Render each object in the scene
-    this.sphereMesh.render(gl, sphereModel, view, projection);
+    this.sphereMesh.renderSphere(gl, sphereModel, view, projection);
     this.cubeMesh.render(gl, cubeModel, view, projection);
+}
+//This is used to allow the camera to pan in full 360 degrees in x and y axis
+createScene.prototype.dragCamera = function(dx,dy) {
+    this.cameraAngleY = Math.min(Math.max(this.cameraAngleY - dy*0.5, -180), 180);
+    this.cameraAngleX = Math.min(Math.max(this.cameraAngleX - dx*0.5, -180), 180);
 }
 
 /*This function is from task5.js in A3
@@ -255,14 +351,6 @@ var VertexSource = `
 
     varying vec3 Color;
 
-    // TODO: Implement a vertex shader that
-    //       a) applies the ModelViewProjection matrix to the vertex position and stores the result in gl_Position
-    //       b) computes the lambert shaded color at the vertex and stores the result in Color
-
-    //       You may need multiple uniforms to get all the required matrices
-    //       for transforming points, vectors and normals.
-
-
     // Constants you should use to compute the final color
     const vec3 LightPosition = vec3(4, 1, 4);
     const vec3 LightIntensity = vec3(20);
@@ -270,8 +358,6 @@ var VertexSource = `
     const vec3 kd = 0.7*vec3(1, 0.5, 0.5);
 
     void main() {
-
-// ################ Edit your code below
         //Transform the position
         gl_Position = ModelViewProjection * vec4(Position, 1.0);
 
@@ -283,24 +369,53 @@ var VertexSource = `
 
         //Compute the color
         Color = ka + (kd * LightIntensity * 1.0/(r*r)  * max(0.0,d));
-
-// ################
-
     }
 `;
 var FragmentSource = `
     precision highp float;
-
     varying vec3 Color;
+    void main() {
+      gl_FragColor = vec4(Color, 1.0);
+    }
+`;
 
-    // TODO: Implement a fragment shader that copies Color into gl_FragColor
-    // Hint: Color is RGB; you need to extend it with an alpha channel to assign it to gl_FragColor
+var TextureVertShader = `
+    uniform mat4 Model;
+    uniform mat4 ModelViewProjection;
+
+    attribute vec3 Position;
+    attribute vec3 Normal;
+    //I believe you could use UV as a template for other mappings
+    attribute vec2 UV;
+
+    varying vec2 vUV;
+    varying vec3 vNormal;
 
     void main() {
+      //Give the values to be interpolated
+      vUV = UV;
+      vNormal = (Model * vec4(Normal, 0.0)).xyz;
+      gl_Position = ModelViewProjection * vec4(Position, 1.0);
+    }
+`;
+var TextureFragShader = `
+    precision highp float;
+    uniform sampler2D sampler;
+    uniform sampler2D sampler2;
+    varying vec2 vUV;
+    varying vec3 vNormal;
 
-// ################ Edit your code below
-      gl_FragColor = vec4(Color, 1.0);
-// ################
+    //Ambient light
+    const vec3 ka = vec3(0.2, 0.2, 0.2);
+    //Directional light (aka Sun position in world coordinates)
+    const vec3 direction = normalize(vec3(4, 1, 1));
+    const vec3 color = vec3(0.6, 0.4, 0.3);
 
+    void main() {
+      float d = dot(normalize(vNormal),direction);
+
+      vec3 lightIntensity = ka + color * max(0.0, d);
+      vec4 kd = texture2D(sampler, vUV);
+      gl_FragColor = kd * vec4(lightIntensity, 1.0);
     }
 `;
