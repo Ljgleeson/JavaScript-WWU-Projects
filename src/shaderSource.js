@@ -1,4 +1,38 @@
 //This file contains shader source code as strings
+var BlackVertexSource = `
+    uniform mat4 ModelViewProjection;
+
+    attribute vec3 Position;
+
+    // TODO: Implement a simple GLSL vertex shader that applies the ModelViewProjection
+    //       matrix to the vertex Position.
+    //       Note that Position is a 3 element vector; you need to extend it by one element (1.0)
+    //       You can extend a vector 'V' by doing vec4(V, 1.0)
+    //       Store the result of the multiplication in gl_Position
+    void main() {
+
+// ################ Edit your code below
+        // Placeholder:
+        gl_Position = ModelViewProjection * vec4(Position, 1.0);
+// ################
+
+    }
+`;
+var BlackFragmentSource = `
+    precision highp float;
+
+    // TODO: Implement a simple GLSL fragment shader that assigns a black color to gl_FragColor
+    //       Colors are vectors with 4 components (red, green, blue, alpha).
+    //       Components are in 0-1 range.
+    void main() {
+
+// ################ Edit your code below
+      gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+// ################
+
+    }
+`;
+
 var VertexSource = `
     uniform mat4 ModelViewProjection;
 

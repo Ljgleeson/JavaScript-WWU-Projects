@@ -46,6 +46,7 @@ ShadedTriangleMesh.prototype.render = function(gl, model, view, projection) {
         gl.enableVertexAttribArray(positionAttrib);
         gl.vertexAttribPointer(positionAttrib, 3, gl.FLOAT, false, 0, 0);
     }
+    
     gl.bindBuffer(gl.ARRAY_BUFFER, this.uvVbo);
     var textCoordAttrib = gl.getAttribLocation(this.shaderProgram, "UV");
     if (textCoordAttrib >= 0) {
@@ -60,8 +61,8 @@ ShadedTriangleMesh.prototype.render = function(gl, model, view, projection) {
     }
     //Create textures for each image map (currently only one works at a time for some reason)
       //This is for the diffuse map
-    var diffMap = gl.createTexture();
-    createTexture(gl, diffMap, "id", gl.TEXTURE0); //id = 
+    //var diffMap = gl.createTexture();
+    //createTexture(gl, diffMap, "id", gl.TEXTURE0); //id = 
 
     gl.drawElements(gl.TRIANGLES, this.indexCount, gl.UNSIGNED_SHORT, 0);
     //gl.bindTexture(gl.TEXTURE_2D, null);
