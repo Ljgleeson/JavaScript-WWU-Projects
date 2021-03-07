@@ -1,29 +1,32 @@
-<head>
-    <title>CSCI 480 - Final Project</title>
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>CSCI 480 - Final Project</title>
 
-    <script src="src/initializeScene.js"></script>
-    <script src="src/shadedTriangleMesh.js"></script>
-    <script src="src/shaderSource.js"></script>
-    <script src="src/matrix.js"></script>
-    <script src="src/rocket.js"></script>
-    <script src="src/sphere.js"></script>
-    <script src="src/three.js"></script>
-    <script src="src/objparser.js"></script>
+        <script src="src/initializeScene.js"></script>
+        <script src="src/shadedTriangleMesh.js"></script>
+        <script src="src/shaderSource.js"></script>
+        <script src="src/matrix.js"></script>
+        <script src="src/rocket.js"></script>
+        <script src="src/cube.js"></script>
+        <script src="src/three.js"></script>
+        <script src="src/objparser.js"></script>
 
-    <!-- <script type="text/plain" id="rocket.obj">
-        fill with text
-    </script> -->
+        <!-- <script type="text/plain" id="rocket.obj">
+            fill with text
+        </script> -->
 
-</head>
+    </head>
 
-<body onload="startupFunction();">
-    <div class="canvas-container">
-        <canvas id="scene" width="1600" height="900"></canvas>
-    </div>
-    <script>
-        function startupFunction() {
-            initialize("scene");
-        }
-    </script>
-</body>
+    <body onload="startupFunction();">
+        <div class="canvas-container">
+            <canvas id="scene" width="1600" height="900"></canvas>
+        </div>
+        <img id="one" src="images/crate.png" width = "0" height = "0"></img>
+        <script>
+            function startupFunction() {
+                initialize("scene");
+            }
+        </script>
+    </body>
 </html>

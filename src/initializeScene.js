@@ -18,15 +18,13 @@ var createScene = function(canvas, gl) {
       this.rocket = new ObjectMesh()
       this.planet1 = new ObjectMesh()
       ... etc */
-
-    // set DOM elements here here
-    // var rocketOBJ = document.getElementById('rocket.obj').innerHTML;
-
-    // // parse OBJ string into JS Object
-    // var rocketParse = ParseWavefrontObj(rocketOBJ);
+    //Define each objects textures at an array of ids here
+    let cubeIDs = ["one"];
+    //let skyboxIDs = ["two"];
+    //Define unique Objects here (new ShadedTriangleMesh() per object)
     var out = parseOBJ(rocket_obj);
     this.rocketMesh = new ShadedTriangleMesh(gl, out.position, null, out.normal, null, VertexSource, FragmentSource);
-
+    this.cubeMesh = new ShadedTriangleMesh(gl, CubePositions, CubeUVs, CubeNormals, CubeIndices, TextureVertShader, TextureFragShader, cubeIDs);
 
     gl.enable(gl.DEPTH_TEST);
 }
@@ -41,17 +39,19 @@ createScene.prototype.render = function(canvas, gl, w, h) {
 
     //Define all transformation matrices here
     var projection = SimpleMatrix.perspective(45, w/h, 0.1, 100);
-    //view is a transaltion matrix with the eye of the camera, and
     var view = SimpleMatrix.rotate(this.cameraAngleX, 0, 1, 0).multiply(
         SimpleMatrix.rotate(this.cameraAngleY, 1, 0, 0).multiply(
         SimpleMatrix.translate(0, 1, 10)));
 
-    var rotation = SimpleMatrix.rotate(Date.now()/25, 0, 1, 0);
-    //var cubeModel = SimpleMatrix.translate(15*Math.cos(Date.now()/2000), -15*Math.sin(Date.now()/2000), 0).multiply(rotation);
-    var rocketModel = new SimpleMatrix();
+    //Define each objects model matrix here
+    var rotation = SimpleMatrix.rotate(Date.now()/25, 0, -1, 0);
+    var cubeModel = rotation;
+    var rocketModel = SimpleMatrix.translate(8*Math.cos(Date.now()/2000), 0, -8*Math.sin(Date.now()/2000)).multiply(
+        SimpleMatrix.rotate(90, 0, 0, 1));
 
     //Render each object in the mesh here
-    this.rocketMesh.render(gl, rocketModel, view, projection);
+    this.rocketMesh.render(gl, rocketModel, SimpleMatrix.multiply(rocketModel,view), projection);
+    this.cubeMesh.render(gl, cubeModel, SimpleMatrix.multiply(rocketModel,view), projection);
 }
 
 //This method updates the x and y camera angles when the mouse is dragged in the canvas
@@ -95,13 +95,6 @@ function initialize(canvasId) {
     //target.addEventListener(type, listener [, options]);
     window.addEventListener('resize', computeCanvasSize);
     computeCanvasSize();
-
-    const context = canvas.getContext("2d");
-    const img = new Image();
-    img.src = "";
-    img.onload = () => {
-      context.drawImage(img, 0, 0);
-    }
 
     var scene = new createScene(canvas, gl);
 
