@@ -116,3 +116,27 @@ var BlackFragmentSource = `
 
     }
 `;
+
+var SkyboxVertSource = `
+    attribute vec4 Position;
+    varying vec4 vPosition;
+    void main() {
+        vPosition = Position;
+        gl_Position = Position;
+        gl_Position.z = 1.0;
+    }
+`;
+
+var SkyboxFragSource = `
+    precision highp float;
+
+    uniform samplerCube sampler;
+    uniform mat4 ModelViewProjInv;
+
+    varying vec4 vPosition;
+    void main() {
+        //Rename mvpinv
+        vec4 t = ModelViewProjInv * vPosition;
+        gl_FragColor = textureCube(sampler, normalize(t.xyz / t.w));
+    }
+`;
