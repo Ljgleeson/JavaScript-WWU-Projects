@@ -24,7 +24,8 @@ var createScene = function(canvas, gl) {
     //Define unique Objects here (new ShadedTriangleMesh() per object)
     var out = parseOBJ(rocket_obj);
     this.rocketMesh = new ShadedTriangleMesh(gl, out.position, null, out.normal, null, VertexSource, FragmentSource);
-    this.cubeMesh = new ShadedTriangleMesh(gl, CubePositions, CubeUVs, CubeNormals, CubeIndices, TextureVertShader, TextureFragShader, cubeIDs);
+    //this.cubeMesh = new ShadedTriangleMesh(gl, CubePositions, CubeUVs, CubeNormals, CubeIndices, TextureVertShader, TextureFragShader, cubeIDs);
+    this.skybox = new ShadedTriangleMesh(gl, sbPositions, null, null, null, SkyboxVertSource, SkyboxFragSource);
 
     gl.enable(gl.DEPTH_TEST);
 }
@@ -36,22 +37,24 @@ createScene.prototype.render = function(canvas, gl, w, h) {
     //Set the paint color and then paint the background of the canvas <--------- This may be where the skybox enters the chat
     gl.clearColor(0.5, 0.5, 0.5, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.depthFunc(gl.LEQUAL);
 
     //Define all transformation matrices here
-    var projection = SimpleMatrix.perspective(45, w/h, 0.1, 100);
-    var view = SimpleMatrix.rotate(this.cameraAngleX, 0, 1, 0).multiply(
-        SimpleMatrix.rotate(this.cameraAngleY, 1, 0, 0).multiply(
-        SimpleMatrix.translate(0, 1, 10)));
+    let projection = SimpleMatrix.perspective(45, w/h, 0.1, 100);
+    let sbView = SimpleMatrix.rotate(this.cameraAngleX, 0, 1, 0).multiply(
+        SimpleMatrix.rotate(this.cameraAngleY, 1, 0, 0));
+    let view = SimpleMatrix.multiply(sbView, SimpleMatrix.translate(0, 1, 15));
 
     //Define each objects model matrix here
-    var rotation = SimpleMatrix.rotate(Date.now()/25, 0, -1, 0);
-    var cubeModel = rotation;
-    var rocketModel = SimpleMatrix.translate(8*Math.cos(Date.now()/2000), 0, -8*Math.sin(Date.now()/2000)).multiply(
+    let rotation = SimpleMatrix.rotate(Date.now()/25, 0, -1, 0);
+    let cubeModel = rotation;
+    let rocketModel = SimpleMatrix.translate(8*Math.cos(Date.now()/2000), 0, -8*Math.sin(Date.now()/2000)).multiply(
         SimpleMatrix.rotate(90, 0, 0, 1));
-
+``
     //Render each object in the mesh here
     this.rocketMesh.render(gl, rocketModel, SimpleMatrix.multiply(rocketModel,view), projection);
-    this.cubeMesh.render(gl, cubeModel, SimpleMatrix.multiply(rocketModel,view), projection);
+    //this.cubeMesh.render(gl, cubeModel, SimpleMatrix.multiply(rocketModel,view), projection);
+    this.skybox.renderSkyBox(gl, sbView, projection);
 }
 
 //This method updates the x and y camera angles when the mouse is dragged in the canvas
@@ -72,7 +75,7 @@ function initialize(canvasId) {
     //Initialization & error checking for WebGL
     try {
         //This line is used to support multiple browsers
-        var gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+        var gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl") || canvas.getContext("moz-webgl");
     } catch (e) {}
     if (!gl) {
         console.log("Could not initialise WebGL");
@@ -190,13 +193,23 @@ function createShaderProgram(gl, vertexSource, fragmentSource) {
     // Link the shaders together into a program
     gl.linkProgram(program);
 
+    //Error check for linking
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+        let error = gl.getProgramInfoLog(program);
+        console.error("Failed to link program: " + error);
+        gl.deleteProgram(program);
+        gl.deleteShader(vertexShader);
+        gl.deleteShader(fragmentShader);
+        return null; //Make sure this is handled elsewhere
+    }
+
     return program;
 }
 
 /*The following functions are from task5.js from A3
     These functions create a buffer for the two types of object data
     gl = gl.getContext('webgl')
-    <type>data = an array of <type>
+    <type>Data = an array of <type>
 */
 function createVertexBuffer(gl, vertexData) {
     var vbo = gl.createBuffer();

@@ -10,6 +10,7 @@
     var ShadedTriangleMesh = function(gl, vertexPositions, vertexUVs, vertexNormals, indices, vertexSource, fragmentSource, imgIDs) {
         // Create OpenGL buffers for the vertex, uvs, normals, and index data of the triangle mesh as needed
         this.positionVbo = createVertexBuffer(gl, vertexPositions);
+        this.drawCount = vertexPositions.length
         if (vertexNormals != null)
             this.normalVbo = createVertexBuffer(gl, vertexNormals);
         if (vertexUVs != null)
@@ -79,15 +80,43 @@
             gl.uniform1i(u_image0Location, 0);  // texture unit 0
             gl.activeTexture(gl.TEXTURE0);
             gl.bindTexture(gl.TEXTURE_2D, textures[0]);
-    
-            gl.drawElements(gl.TRIANGLES, this.indexCount, gl.UNSIGNED_SHORT, 0);
-        } else {
-          //This works for the rocket for now
-          gl.drawArrays(gl.TRIANGLES, 0, 9504);
         }
     
-        //gl.drawElements(gl.TRIANGLES, this.indexCount, gl.UNSIGNED_SHORT, 0);
-        //gl.bindTexture(gl.TEXTURE_2D, null);
+        //For now this check lets us render objects indices and without
+        if (this.indexCount > 0)
+            gl.drawElements(gl.TRIANGLES, this.indexCount, gl.UNSIGNED_SHORT, 0);
+        else
+            gl.drawArrays(gl.TRIANGLES, 0, this.drawCount);
+    }
+    
+    //Compared to other objects this one has static information so hard coding wouldnt be bad
+    ShadedTriangleMesh.prototype.renderSkyBox = function(gl, view, projection) {
+        gl.useProgram(this.shaderProgram);
+    
+        let mvpInv = new SimpleMatrix();
+        mvpInv = SimpleMatrix.inverse(SimpleMatrix.multiply(projection, SimpleMatrix.inverse(view)));
+        gl.uniformMatrix4fv(gl.getUniformLocation(this.shaderProgram, "ModelViewProjInv"), false, mvpInv.transpose().m);
+    
+        /* Already defeined variables:
+            Program = this.shaderProgram
+            Positions = this.vertexPositions
+            Normals = this.vertexNormals */
+    
+        //Handle the vertex variables
+            // attribute vec4 Position; DONE?
+            // varying vec4 vPosition; DONE
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.positionVbo);
+        let positionAttrib = gl.getAttribLocation(this.shaderProgram, "Position");
+        if (positionAttrib >= 0) {
+            gl.enableVertexAttribArray(positionAttrib);
+            gl.vertexAttribPointer(positionAttrib, 2, gl.FLOAT, false, 0, 0);
+        }
+    
+        let skyboxLocation = gl.getUniformLocation(this.shaderProgram, "sampler");
+        gl.uniform1i(skyboxLocation, 0);
+        loadSkyBox(gl);
+    
+        gl.drawArrays(gl.TRIANGLES, 0, 36);
     }
     
     //This function loads a active texture into in GL from an image file
@@ -114,6 +143,41 @@
             // add the texture to the array of textures.
             textures.push(texture);
         }
+    
         return textures;
+    }
+    
+    function loadSkyBox(gl) {
+    
+        //Cube Constants values increment, so easy to start with right and just add 1 in a loop
+        //To make the code easier costs by making the imgAry coming into the function to have
+        //the images sorted in the same way the constants are set.
+        //	TEXTURE_CUBE_MAP_POSITIVE_X - Right	:: TEXTURE_CUBE_MAP_NEGATIVE_X - Left
+        //	TEXTURE_CUBE_MAP_POSITIVE_Y - Top 	:: TEXTURE_CUBE_MAP_NEGATIVE_Y - Bottom
+        //	TEXTURE_CUBE_MAP_POSITIVE_Z - Back	:: TEXTURE_CUBE_MAP_NEGATIVE_Z - Front
+        var sbFaces =
+          [
+            document.getElementById("right"),
+            document.getElementById("left"),
+            document.getElementById("top"),
+            document.getElementById("bottom"),
+            document.getElementById("front"),
+            document.getElementById("back"),
+          ];
+        let tex = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_CUBE_MAP,tex);
+    
+        //push image to specific spot in the cube map.
+        for(var i=0; i < 6; i++){
+             gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, sbFaces[i]);
+        }
+    
+        gl.generateMipmap(gl.TEXTURE_CUBE_MAP);
+        gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    
+        return tex;
     }
     
