@@ -9,6 +9,8 @@
     function createIndexBuffer(gl, indexData)
 */
 
+const CONSTANT_T = 0.0001;
+
 //This object stores the scene data
 var createScene = function(canvas, gl) {
     //Store any attributes relevant to calculations
@@ -24,6 +26,7 @@ var createScene = function(canvas, gl) {
     //Define unique Objects here (new ShadedTriangleMesh() per object)
     var out = parseOBJ(rocket_obj);
     var sp = parseOBJ(sphere_obj);
+    this.rocketSpline = new Splines();
     this.rocketMesh = new ShadedTriangleMesh(gl, out.position, null, out.normal, null, VertexSource, FragmentSource);
     this.sphereMesh = new ShadedTriangleMesh(gl, sp.position, null, sp.normal, null, VertexSource, FragmentSource);
     //this.cubeMesh = new ShadedTriangleMesh(gl, CubePositions, CubeUVs, CubeNormals, CubeIndices, TextureVertShader, TextureFragShader, cubeIDs);
@@ -41,6 +44,29 @@ createScene.prototype.render = function(canvas, gl, w, h) {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.depthFunc(gl.LEQUAL);
 
+    // Splines
+    // var RocketSplines = has 9 splines
+    // CONST = 0.000001
+
+    /*
+    * t += delta*CONST;
+    *
+    * if (t > 1) {
+    *   t -= 1;
+    *   i_rocket += 1;
+    *   if ( i_rocket > rocketSplines.length()-1 ) {
+    *     i_rocket = 0;
+    *   }
+    * }
+    *
+    * var xz_coords = rocketSplines[i_rocket].eval_direct(t);
+    *
+    */
+
+    this.rocketSpline.setT(delta * CONSTANT_T);
+
+    let rocket_xz = this.rocketSpline.eval_direct();
+
     //Define all transformation matrices here
     let projection = SimpleMatrix.perspective(45, w/h, 0.1, 100);
     let sbView = SimpleMatrix.rotate(this.cameraAngleX, 0, 1, 0).multiply(
@@ -52,10 +78,10 @@ createScene.prototype.render = function(canvas, gl, w, h) {
     let cubeModel = rotation;
     let translate = SimpleMatrix.translate(15,1, -5);
     let sphereModel = translate;
-    
+
     //let rocketModel = SimpleMatrix.translate(8*Math.cos(Date.now()/2000), 0, -8*Math.sin(Date.now()/2000)).multiply(
       //  SimpleMatrix.rotate(90, 0, 0, 1));
-    let rocketModel = SimpleMatrix.translate(0, 0, 0).multiply(
+    let rocketModel = SimpleMatrix.translate(rocket_xz[0], 0, rocket_xz[1]).multiply(
       SimpleMatrix.rotate(90, 0, 0, -180));
 
 ``
@@ -85,7 +111,7 @@ function initialize(canvasId) {
     //Initialization & error checking for WebGL
     try {
         //This line is used to support multiple browsers
-        var gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl") || canvas.getContext("moz-webgl");
+        var gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl") || canvas.getContext("moz-webgl" || canvas.getContext("webgl2"));
     } catch (e) {}
     if (!gl) {
         console.log("Could not initialise WebGL");
@@ -137,8 +163,13 @@ function initialize(canvasId) {
         }
     });
 
+    // Start time of animations
+    epoch = Date.now();
+
     //This is the main render loop
     var renderLoop = function() {
+        // Animation time Delta
+        delta = Date.now() - epoch;
         scene.render(canvas, gl, renderWidth, renderHeight);
         window.requestAnimationFrame(renderLoop);
     }

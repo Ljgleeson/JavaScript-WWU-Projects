@@ -154,7 +154,7 @@ SimpleMatrix.multiplyVector = function(matrix, vector)
     newVector[1] = matrix.m[4]*vector[0] + matrix.m[5]*vector[1] + matrix.m[6]*vector[2] + matrix.m[7]*1;
     newVector[2] = matrix.m[8]*vector[0] + matrix.m[9]*vector[1] + matrix.m[10]*vector[2] + matrix.m[11]*1;
     // 4th component, not passed in the parameter vector
-    // newVector[3] = matrix.m[12]*vector[0] + matrix.m[13]*vector[1] + matrix.m[14]*vector[2] + matrix.m[15]*1;
+    newVector[3] = matrix.m[12]*vector[0] + matrix.m[13]*vector[1] + matrix.m[14]*vector[2] + matrix.m[15]*1;
 // ################
 
     return newVector;
