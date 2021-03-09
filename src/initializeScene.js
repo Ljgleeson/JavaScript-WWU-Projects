@@ -30,8 +30,8 @@ var createScene = function(canvas, gl) {
     this.rocketMesh = new ShadedTriangleMesh(gl, out.position, null, out.normal, null, VertexSource, FragmentSource);
     this.sphereMesh = new ShadedTriangleMesh(gl, sp.position, null, sp.normal, null, VertexSource, FragmentSource);
     //this.cubeMesh = new ShadedTriangleMesh(gl, CubePositions, CubeUVs, CubeNormals, CubeIndices, TextureVertShader, TextureFragShader, cubeIDs);
-    this.skybox = new ShadedTriangleMesh(gl, sbPositions, null, null, null, SkyboxVertSource, SkyboxFragSource);
-
+    this.skybox = new Skybox(gl, SkyboxVertSource, SkyboxFragSource);
+    
     gl.enable(gl.DEPTH_TEST);
 }
 
@@ -84,13 +84,12 @@ createScene.prototype.render = function(canvas, gl, w, h) {
     let rocketModel = SimpleMatrix.translate(rocket_xz[0], 0, rocket_xz[1]).multiply(
       SimpleMatrix.rotate(90, 0, 0, -180));
 
-``
     //Render each object in the mesh here
     //rocketModel.multiply(SimpleMatrix.rotate(90, 0, 0, 1))
     this.rocketMesh.render(gl, rocketModel, view, projection);
     //this.cubeMesh.render(gl, cubeModel, SimpleMatrix.multiply(rocketModel,view), projection);
     this.sphereMesh.render(gl, sphereModel, view, projection);
-    this.skybox.renderSkyBox(gl, sbView, projection);
+    this.skybox.render(gl, sbView, projection);
 }
 
 //This method updates the x and y camera angles when the mouse is dragged in the canvas
@@ -122,7 +121,7 @@ function initialize(canvasId) {
     var renderWidth, renderHeight;
     function computeCanvasSize() {
         //This line sets the width to the window width if window width is less than 1600, otherwise w=1600
-        renderWidth = Math.min(canvas.parentNode.clientWidth , 2090);
+        renderWidth = Math.min(canvas.parentNode.clientWidth , 820);
         //This line enforces a 16:9 aspect ratio
         renderHeight = Math.floor(renderWidth*9.0/16.0);
         canvas.width = renderWidth;

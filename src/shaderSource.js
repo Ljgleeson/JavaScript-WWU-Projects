@@ -131,12 +131,12 @@ var SkyboxFragSource = `
     precision highp float;
 
     uniform samplerCube sampler;
-    uniform mat4 ModelViewProjInv;
+    uniform mat4 ViewProjInv;
 
     varying vec4 vPosition;
     void main() {
         //Rename mvpinv
-        vec4 t = ModelViewProjInv * vPosition;
+        vec4 t = ViewProjInv * vPosition;
         gl_FragColor = textureCube(sampler, normalize(t.xyz / t.w));
     }
 `;
