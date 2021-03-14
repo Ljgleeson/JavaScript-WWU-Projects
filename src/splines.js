@@ -1,10 +1,20 @@
-var Splines = function(ctrlX = null, ctrlZ = null) {
+var Splines = function(ctrlX = [  1,  0,  1,  0], ctrlZ = [  0,  1,  3,  1]) {
     // initialize t to zero at start
     this.t = 0;
+    this.it = 0;
+
+    // [  1,  0,  1,  0] x coordinates
+    // [  0,  1,  3,  1] z coordinates
 
     // control points are stored in 2 arrays:
-    this.ctrlX = [  1,  0,  1,  0]; // x coordinates
-    this.ctrlZ = [  0,  1,  3,  1]; // z coordinates (most movement on zx-plane)
+    this.ctrlX = ctrlX;
+    /*ctrlX.forEach( (item) => {
+        this.ctrlX += [item];
+    }); // x coordinates*/
+    this.ctrlZ = ctrlZ;
+    /*ctrlZ.forEach( (item) => {
+        this.ctrlZ += [item];
+    });// z coordinates (most movement on zx-plane)*/
 
     // Task 1a: fill in the Bezier control matrix
     this.B = new SimpleMatrix(
@@ -13,15 +23,27 @@ var Splines = function(ctrlX = null, ctrlZ = null) {
       3, -6,  3,  0,
      -1,  3, -3,  1);
 
+    this.Ax = [ctrlX.length];
+    this.Az = [ctrlZ.length];
+
     // precompute the polynomial coefficients (a_i) for the curve
-    this.Ax = this.B.multiplyVector(this.ctrlX);
-    this.Az = this.B.multiplyVector(this.ctrlZ);
+    for (let i = 0; i < ctrlX.length; i++) {
+        this.Ax[i] = this.B.multiplyVector(this.ctrlX[i]);
+        this.Az[i] = this.B.multiplyVector(this.ctrlZ[i]);
+    }
 
 }
 
 Splines.prototype.setT = function(t)
 {
     this.t += t;
+    if (this.t >= 1) {
+        this.t -= 1;
+        this.it += 1;
+        if (this.it >= this.ctrlX.length || this.it >= this.ctrlZ.length) {
+            this.it = 0;
+        }
+    }
 }
 
 /* Return an array [x, y] containing the coordinates of the point
@@ -29,8 +51,8 @@ Splines.prototype.setT = function(t)
 Splines.prototype.eval_direct = function() {
   // Task 1c: implement this method
 
-  var px = this.Ax[0] + this.Ax[1]*this.t + this.Ax[2]*this.t*this.t + this.Ax[3]*this.t*this.t*this.t;
-  var pz = this.Az[0] + this.Az[1]*this.t + this.Az[2]*this.t*this.t + this.Az[3]*this.t*this.t*this.t;
+  var px = this.Ax[this.it][0] + this.Ax[this.it][1]*this.t + this.Ax[this.it][2]*this.t*this.t + this.Ax[this.it][3]*this.t*this.t*this.t;
+  var pz = this.Az[this.it][0] + this.Az[this.it][1]*this.t + this.Az[this.it][2]*this.t*this.t + this.Az[this.it][3]*this.t*this.t*this.t;
 
   return [px, pz];
 }
@@ -130,84 +152,4 @@ Splines.prototype.draw_dcj = function(context, cx, cy, maxDepth) {
 
     this.draw_dcj(context, Lxc, Lyc, maxDepth-1);
     this.draw_dcj(context, Rxc, Ryc, maxDepth-1);
-}
-
-/***********************************************\
-/* end of lab code; beginning of setup/UI code *|
-\***********************************************/
-
-Splines.prototype.startDrag = function(canvas, e) {
-  rect = canvas.getBoundingClientRect();
-  x = event.clientX - rect.left;
-  y = event.clientY - rect.top;
-
-  // find the closest control point to the mouse
-  md = Infinity;
-  for (i = 0; i < 4; i++) {
-    cpx = this.ctrlX[i];
-    cpy = this.ctrlY[i];
-    d = (cpx - x)**2 + (cpy - y)**2;
-    if (d < md) {
-      md = d;
-      mi = i;
-    }
-  }
-
-  // update control point's position and set up for dragging
-  this.dragIndex = mi;
-  this.ctrlX[mi] = x;
-  this.ctrlY[mi] = y;
-
-  //console.log("start drag point " + mi);
-  //canvas.addEventListener("mousemove", () => this.drag(canvas, e));
-}
-
-Splines.prototype.drag = function(canvas, e) {
-  if (this.dragIndex >= 0) {
-    rect = canvas.getBoundingClientRect();
-    x = e.clientX - rect.left;
-    y = e.clientY - rect.top;
-
-    this.ctrlX[this.dragIndex] = x;
-    this.ctrlY[this.dragIndex] = y;
-
-  }
-}
-
-Splines.prototype.stopDrag = function(e) {
-  this.dragIndex = -1;
-}
-
-function setup(canvasId) {
-    var canvas = document.getElementById(canvasId);
-    if (!canvas) {
-        console.log("Could not find canvas with id", canvasId);
-        return;
-    }
-
-    var renderWidth, renderHeight;
-    function computeCanvasSize() {
-        renderWidth = Math.min(canvas.parentNode.clientWidth - 20, 820);
-        renderHeight = Math.floor(renderWidth*9.0/16.0);
-        canvas.width = renderWidth;
-        canvas.height = renderHeight;
-    }
-
-    window.addEventListener('resize', computeCanvasSize);
-    computeCanvasSize();
-
-    var demo = new Splines(canvas);
-
-    canvas.addEventListener('mousedown', function(e) { demo.startDrag(canvas, e); })
-    canvas.addEventListener('mousemove', function(e) { demo.drag(canvas, e); })
-    canvas.addEventListener('mouseup', function(e) { demo.stopDrag(canvas, e); })
-    canvas.addEventListener('mouseout', function(e) { demo.stopDrag(canvas, e); })
-
-    var renderLoop = function() {
-        demo.render(canvas, renderWidth, renderHeight);
-        window.requestAnimationFrame(renderLoop);
-    }
-    window.requestAnimationFrame(renderLoop);
-
-    return demo;
 }

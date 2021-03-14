@@ -143,18 +143,14 @@ SimpleMatrix.rotate = function(a, x, y, z) {
 
 SimpleMatrix.multiplyVector = function(matrix, vector)
 {
-    var newVector = [0, 0, 0];
+    var newVector = [0, 0, 0, 0];
 
 // ################ Edit your code below
-    // TODO: Implement Matrix Vector multiplication
-    // Hint: The incoming vector will only have 3 components
-    // Hint: Assume that the 4th component is 1.0
-    // Hint: For this assignment you only need the x,y,z components of the product
-    newVector[0] = matrix.m[0]*vector[0] + matrix.m[1]*vector[1] + matrix.m[2]*vector[2] + matrix.m[3]*1;
-    newVector[1] = matrix.m[4]*vector[0] + matrix.m[5]*vector[1] + matrix.m[6]*vector[2] + matrix.m[7]*1;
-    newVector[2] = matrix.m[8]*vector[0] + matrix.m[9]*vector[1] + matrix.m[10]*vector[2] + matrix.m[11]*1;
-    // 4th component, not passed in the parameter vector
-    newVector[3] = matrix.m[12]*vector[0] + matrix.m[13]*vector[1] + matrix.m[14]*vector[2] + matrix.m[15]*1;
+    // NOT ASSUMING that the 4th component is 1.0
+    newVector[0] = matrix.m[0]*vector[0] + matrix.m[1]*vector[1] + matrix.m[2]*vector[2] + matrix.m[3]*vector[3];
+    newVector[1] = matrix.m[4]*vector[0] + matrix.m[5]*vector[1] + matrix.m[6]*vector[2] + matrix.m[7]*vector[3];
+    newVector[2] = matrix.m[8]*vector[0] + matrix.m[9]*vector[1] + matrix.m[10]*vector[2] + matrix.m[11]*vector[3];
+    newVector[3] = matrix.m[12]*vector[0] + matrix.m[13]*vector[1] + matrix.m[14]*vector[2] + matrix.m[15]*vector[3];
 // ################
 
     return newVector;

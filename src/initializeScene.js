@@ -9,7 +9,7 @@
     function createIndexBuffer(gl, indexData)
 */
 
-const CONSTANT_T = 0.0001;
+const CONSTANT_T = 0.0005;
 
 //This object stores the scene data
 var createScene = function(canvas, gl) {
@@ -30,7 +30,24 @@ var createScene = function(canvas, gl) {
     //Define unique Objects here (new ShadedTriangleMesh() per object)
     var out = parseOBJ(rocket_obj);
     var sp = parseOBJ(sphere_obj);
-    this.rocketSpline = new Splines();
+
+    // FOR DEBUGGING: Splines
+    /*xcord = document.getElementById("xcor");
+    zcord = document.getElementById("zcor");*/
+
+
+    // Rocket spline path: X-control points
+    var rocketCtrlX = [
+        [0,  3,  3,  0],
+        [0, -3, -3,  0]
+    ];
+    // Rocket spline path: Z-control points
+    var rocketCtrlZ = [
+        [5,  5,  0,  0],
+        [0,  0,  5,  5]
+    ];
+    this.rocketSpline = new Splines(rocketCtrlX, rocketCtrlZ);
+
     this.rocketMesh = new ShadedTriangleMesh(gl, out.position, null, out.normal, null, VertexSource, FragmentSource);
     this.sphereMesh1 = new ShadedTriangleMesh(gl, sp.position, sp.texcoord, sp.normal, null, TextureVertShader, TextureFragShader, planet1Id);
     this.sphereMesh2 = new ShadedTriangleMesh(gl, sp.position, sp.texcoord, sp.normal, null, TextureVertShader, TextureFragShader, planet2Id);
@@ -73,6 +90,9 @@ createScene.prototype.render = function(canvas, gl, w, h) {
     this.rocketSpline.setT(delta * CONSTANT_T);
 
     let rocket_xz = this.rocketSpline.eval_direct();
+    // FOR DEBUGGING: Splines
+    /*xcord.innerHTML = rocket_xz[0];
+    zcord.innerHTML = rocket_xz[1];*/
 
     //Define all transformation matrices here
     let projection = SimpleMatrix.perspective(45, w/h, 0.1, 100);
@@ -191,6 +211,7 @@ function initialize(canvasId) {
     var renderLoop = function() {
         // Animation time Delta
         delta = Date.now() - epoch;
+        epoch = Date.now();
         scene.render(canvas, gl, renderWidth, renderHeight);
         window.requestAnimationFrame(renderLoop);
     }
