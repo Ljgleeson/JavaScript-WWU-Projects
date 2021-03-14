@@ -120,6 +120,7 @@ createScene.prototype.render = function(canvas, gl, w, h) {
         .multiply(SimpleMatrix.rotate(90, 0, 0, -180))
         .multiply(SimpleMatrix.scale(0.5, 0.5, 0.5));
 
+    view = SimpleMatrix.multiply(SimpleMatrix.translate(rocket_xz[0], 0, rocket_xz[1]), view);
     //Render each object in the mesh here
     //rocketModel.multiply(SimpleMatrix.rotate(90, 0, 0, 1))
     this.rocketMesh.render(gl, rocketModel, view, projection);
