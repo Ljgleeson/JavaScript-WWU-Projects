@@ -9,7 +9,7 @@
     function createIndexBuffer(gl, indexData)
 */
 
-const CONSTANT_T = 0.0005;
+const CONSTANT_T = 0.0001;
 
 //This object stores the scene data
 var createScene = function(canvas, gl) {
@@ -35,18 +35,31 @@ var createScene = function(canvas, gl) {
     /*xcord = document.getElementById("xcor");
     zcord = document.getElementById("zcor");*/
 
+    // Planet 1 = ( 30,  1,  -5), scaled by 5
+    // Planet 2 = (  0,  2, -50), scaled by 5
+    // Planet 3 = (-30,  1,   5), scaled by 7
 
     // Rocket spline path: X-control points
     var rocketCtrlX = [
-        [0,  3,  3,  0],
-        [0, -3, -3,  0]
+        [  0, 10, 40, 40],
+        [ 40, 40, 15,  0],
+        [  0,-15,-25,  0],
+        [  0, 25, 10,  0],
+        [  0,-10,-25,-40],
+        [-40,-50,-10,  0]
     ];
     // Rocket spline path: Z-control points
     var rocketCtrlZ = [
-        [5,  5,  0,  0],
-        [0,  0,  5,  5]
+        [  0, 15, 15, -5],
+        [ -5,-25,-20,-25],
+        [-25,-30,-65,-65],
+        [-65,-65,-40,-25],
+        [-25,-15, 30, 15],
+        [ 15,-15,-15,  0]
     ];
-    this.rocketSpline = new Splines(rocketCtrlX, rocketCtrlZ);
+    // Rocket speed values
+    var rocketSpeeds = [1, 1, 1, 1, 1, 1];
+    this.rocketSpline = new Splines(rocketCtrlX, rocketCtrlZ, rocketSpeeds);
 
     this.rocketMesh = new ShadedTriangleMesh(gl, out.position, null, out.normal, null, VertexSource, FragmentSource);
     this.sphereMesh1 = new ShadedTriangleMesh(gl, sp.position, sp.texcoord, sp.normal, null, TextureVertShader, TextureFragShader, planet1Id);
@@ -68,27 +81,9 @@ createScene.prototype.render = function(canvas, gl, w, h) {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.depthFunc(gl.LEQUAL);
 
-    // Splines
-    // var RocketSplines = has 9 splines
-    // CONST = 0.000001
-
-    /*
-    * t += delta*CONST;
-    *
-    * if (t > 1) {
-    *   t -= 1;
-    *   i_rocket += 1;
-    *   if ( i_rocket > rocketSplines.length()-1 ) {
-    *     i_rocket = 0;
-    *   }
-    * }
-    *
-    * var xz_coords = rocketSplines[i_rocket].eval_direct(t);
-    *
-    */
-
+    // Move the rocket along the spline path
     this.rocketSpline.setT(delta * CONSTANT_T);
-
+    // Calculate the rocket's X and Z coordinates
     let rocket_xz = this.rocketSpline.eval_direct();
     // FOR DEBUGGING: Splines
     /*xcord.innerHTML = rocket_xz[0];
@@ -121,8 +116,9 @@ createScene.prototype.render = function(canvas, gl, w, h) {
 
     //let rocketModel = SimpleMatrix.translate(8*Math.cos(Date.now()/2000), 0, -8*Math.sin(Date.now()/2000)).multiply(
       //  SimpleMatrix.rotate(90, 0, 0, 1));
-    let rocketModel = SimpleMatrix.translate(rocket_xz[0], 0, rocket_xz[1]).multiply(
-      SimpleMatrix.rotate(90, 0, 0, -180));
+    let rocketModel = SimpleMatrix.translate(rocket_xz[0], 0, rocket_xz[1])
+        .multiply(SimpleMatrix.rotate(90, 0, 0, -180))
+        .multiply(SimpleMatrix.scale(0.5, 0.5, 0.5));
 
     //Render each object in the mesh here
     //rocketModel.multiply(SimpleMatrix.rotate(90, 0, 0, 1))

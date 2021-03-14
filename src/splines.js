@@ -1,20 +1,19 @@
-var Splines = function(ctrlX = [  1,  0,  1,  0], ctrlZ = [  0,  1,  3,  1]) {
+var Splines = function(ctrlX = [  1,  0,  1,  0], ctrlZ = [  0,  1,  3,  1], ctrlSpeeds = [1]) {
     // initialize t to zero at start
     this.t = 0;
+
+    // iterator for each spline in a set of splines (this.CtrlX and this.CtrlZ)
     this.it = 0;
 
     // [  1,  0,  1,  0] x coordinates
     // [  0,  1,  3,  1] z coordinates
 
+    // Constants for speed along a spline
+    this.ctrlSpeeds = ctrlSpeeds;
+
     // control points are stored in 2 arrays:
     this.ctrlX = ctrlX;
-    /*ctrlX.forEach( (item) => {
-        this.ctrlX += [item];
-    }); // x coordinates*/
     this.ctrlZ = ctrlZ;
-    /*ctrlZ.forEach( (item) => {
-        this.ctrlZ += [item];
-    });// z coordinates (most movement on zx-plane)*/
 
     // Task 1a: fill in the Bezier control matrix
     this.B = new SimpleMatrix(
@@ -36,7 +35,7 @@ var Splines = function(ctrlX = [  1,  0,  1,  0], ctrlZ = [  0,  1,  3,  1]) {
 
 Splines.prototype.setT = function(t)
 {
-    this.t += t;
+    this.t += t * this.ctrlSpeeds[this.it];
     if (this.t >= 1) {
         this.t -= 1;
         this.it += 1;
