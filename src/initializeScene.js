@@ -104,19 +104,20 @@ createScene.prototype.render = function(canvas, gl, w, h) {
     let rotation = SimpleMatrix.rotate(Date.now()/25, 0, -1, 0);
     let cubeModel = rotation;
 
-    let translate1 = SimpleMatrix.translate(15,1, -5);
-    let sphereModel1 = translate1;
-
-    let translate2 = SimpleMatrix.translate(0, 2, -50);
+    let translate1 = SimpleMatrix.translate(30,1, -5);
     let scale1 = SimpleMatrix.scale(5,5,5);
+    let sphereModel1 = SimpleMatrix.multiply(translate1,scale1);
+    
+    let translate2 = SimpleMatrix.translate(0, 2, -50);
     let sphereModel2 =   SimpleMatrix.multiply(translate2, scale1);
 
-    let translate3 = SimpleMatrix.translate(-20, -2, 10);
-    let sphereModel3 = SimpleMatrix.multiply(translate3,scale1);
+    let translate3 = SimpleMatrix.translate(-30, 1, 5);
+    let scale2 = SimpleMatrix.scale(7,7,7);
+    let sphereModel3 = SimpleMatrix.multiply(translate3,scale2);
 
     let translate4 = SimpleMatrix.translate(15, 30, 80);
-    let scale2 = SimpleMatrix.scale(20,20,20);
-    let sunModel = SimpleMatrix.multiply(translate4,scale2);
+    let scaleSun = SimpleMatrix.scale(22,22,22);
+    let sunModel = SimpleMatrix.multiply(translate4,scaleSun);
 
     //let rocketModel = SimpleMatrix.translate(8*Math.cos(Date.now()/2000), 0, -8*Math.sin(Date.now()/2000)).multiply(
       //  SimpleMatrix.rotate(90, 0, 0, 1));
