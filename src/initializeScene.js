@@ -22,13 +22,20 @@ var createScene = function(canvas, gl) {
       ... etc */
     //Define each objects textures at an array of ids here
     let cubeIDs = ["one"];
+    let sunId = ["sun"];
+    let planet1Id = ["planet1"];
+    let planet2Id = ["planet2"];
+    let planet3Id = ["planet3"];
     //let skyboxIDs = ["two"];
     //Define unique Objects here (new ShadedTriangleMesh() per object)
     var out = parseOBJ(rocket_obj);
     var sp = parseOBJ(sphere_obj);
     this.rocketSpline = new Splines();
     this.rocketMesh = new ShadedTriangleMesh(gl, out.position, null, out.normal, null, VertexSource, FragmentSource);
-    this.sphereMesh = new ShadedTriangleMesh(gl, sp.position, null, sp.normal, null, VertexSource, FragmentSource);
+    this.sphereMesh1 = new ShadedTriangleMesh(gl, sp.position, sp.texcoord, sp.normal, null, TextureVertShader, TextureFragShader, planet1Id);
+    this.sphereMesh2 = new ShadedTriangleMesh(gl, sp.position, sp.texcoord, sp.normal, null, TextureVertShader, TextureFragShader, planet2Id);
+    this.sphereMesh3 = new ShadedTriangleMesh(gl, sp.position, sp.texcoord, sp.normal, null, TextureVertShader, TextureFragShader, planet3Id);
+    this.sun = new ShadedTriangleMesh(gl, sp.position, sp.texcoord, sp.normal, null, TextureVertShader, TextureFragShader, sunId);
     //this.cubeMesh = new ShadedTriangleMesh(gl, CubePositions, CubeUVs, CubeNormals, CubeIndices, TextureVertShader, TextureFragShader, cubeIDs);
     this.skybox = new Skybox(gl, SkyboxVertSource, SkyboxFragSource);
     
@@ -76,8 +83,20 @@ createScene.prototype.render = function(canvas, gl, w, h) {
     //Define each objects model matrix here
     let rotation = SimpleMatrix.rotate(Date.now()/25, 0, -1, 0);
     let cubeModel = rotation;
-    let translate = SimpleMatrix.translate(15,1, -5);
-    let sphereModel = translate;
+
+    let translate1 = SimpleMatrix.translate(15,1, -5);
+    let sphereModel1 = translate1;
+
+    let translate2 = SimpleMatrix.translate(0, 2, -50);
+    let scale1 = SimpleMatrix.scale(5,5,5);
+    let sphereModel2 =   SimpleMatrix.multiply(translate2, scale1);
+
+    let translate3 = SimpleMatrix.translate(-20, -2, 10);
+    let sphereModel3 = SimpleMatrix.multiply(translate3,scale1);
+
+    let translate4 = SimpleMatrix.translate(15, 30, 80);
+    let scale2 = SimpleMatrix.scale(20,20,20);
+    let sunModel = SimpleMatrix.multiply(translate4,scale2);
 
     //let rocketModel = SimpleMatrix.translate(8*Math.cos(Date.now()/2000), 0, -8*Math.sin(Date.now()/2000)).multiply(
       //  SimpleMatrix.rotate(90, 0, 0, 1));
@@ -88,7 +107,10 @@ createScene.prototype.render = function(canvas, gl, w, h) {
     //rocketModel.multiply(SimpleMatrix.rotate(90, 0, 0, 1))
     this.rocketMesh.render(gl, rocketModel, view, projection);
     //this.cubeMesh.render(gl, cubeModel, SimpleMatrix.multiply(rocketModel,view), projection);
-    this.sphereMesh.render(gl, sphereModel, view, projection);
+    this.sphereMesh1.render(gl, sphereModel1, view, projection);
+    this.sphereMesh2.render(gl, sphereModel2, view, projection);
+    this.sphereMesh3.render(gl, sphereModel3, view, projection);
+    this.sun.render(gl, sunModel, view, projection)
     this.skybox.render(gl, sbView, projection);
 }
 

@@ -112,6 +112,5 @@ function loadTexture(gl, images) {
         // add the texture to the array of textures.
         textures.push(texture);
     }
-
     return textures;
 }
