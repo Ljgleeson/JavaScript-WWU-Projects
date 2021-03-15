@@ -4,6 +4,7 @@
     ShadedTriangleMesh.prototype.render = function(gl, model, view, projection)
     function loadTexture(gl, images)
 */
+const samplers = ["sampler", "sampler2"];
 
 //This object stores the vertex data of an object mesh and the shader program to be used on it
 //img = array of string-id's for images
@@ -13,12 +14,78 @@ var ShadedTriangleMesh = function(gl, vertexPositions, vertexUVs, vertexNormals,
     this.drawCount = vertexPositions.length
     if (vertexNormals != null)
         this.normalVbo = createVertexBuffer(gl, vertexNormals);
-    if (vertexUVs != null)
+    if (vertexUVs != null) {
         this.uvVbo = createVertexBuffer(gl,vertexUVs);
+
+        //A second image means use normals
+        if (imgIDs.length > 1) {
+            //Generate the tangents and bitangents for use with normal maps
+            //Store them in the same order as the positions
+            //[t1, t2, etc]
+            let tangents = [];
+            //[b1, b2, etc]
+            let bitangents = [];
+            //These contain the tangents or the bitangents respectively for every vertex,
+            let triCount = this.drawCount/9
+            for (let i = 0;i<triCount;i++) {
+                //tri: a = i, b = i+1, c = i+2
+
+                //Now find the dU and dV for each side
+                //Each triangle consumes 6 length of the uv array
+                let uv = 6*i;
+                //dUV1 = p2-p1
+                let dU1 = vertexUVs[uv+2] - vertexUVs[uv];
+                //dUV2 = p3-p1
+                let dU2 = vertexUVs[uv+4] - vertexUVs[uv];
+                let dV1 = vertexUVs[uv+3] - vertexUVs[uv+1];
+                let dV2 = vertexUVs[uv+5] - vertexUVs[uv+1];
+
+                //Calculate edge1 and edge2 using vertexPositions
+                //Each triangle consumes 9 length of the pos array
+                let p = 9*i;
+                //e1 = p2-p1
+                let x1 = vertexPositions[p+3] - vertexPositions[p];
+                let y1 = vertexPositions[p+4] - vertexPositions[p+1];
+                let z1 = vertexPositions[p+5] - vertexPositions[p+2];
+                //e2 = p3-p1
+                let x2 = vertexPositions[p+6] - vertexPositions[p];
+                let y2 = vertexPositions[p+7] - vertexPositions[p+1];
+                let z2 = vertexPositions[p+8] - vertexPositions[p+2];
+
+                //Calculate tangents from above
+                //T = dV2*Ee1 + -dV1*e2
+                let tx = dV2*x1 + -dV1*x2;
+                let ty = dV2*y1 + -dV1*y2;
+                let tz = dV2*z1 + -dV1*z2;
+
+                //Calculate the bitangents
+                //B = -dU2*e1 + dU1*e2
+                let bx = -dU2*x1 + dU1*x2;
+                let by = -dU2*y1 + dU1*y2;
+                let bz = -dU2*z1 + dU1*z2;
+                
+                //Store the values for each vertex in the triangle
+                for(let j=0;j<3;j++) {
+                    //push the x, y, then z values for the vertex
+                    tangents.push(tx);
+                    tangents.push(ty);
+                    tangents.push(tz);
+                    bitangents.push(bx);
+                    bitangents.push(by);
+                    bitangents.push(bz);
+                }
+            }
+            //Theses values are currently in terms of model space
+            this.tanVbo = createVertexBuffer(gl, tangents);
+            this.bitVbo = createVertexBuffer(gl, bitangents);
+        }
+    }
     if (imgIDs != null) {
-        //This needs revised later during normals or something
-        this.image = document.getElementById(imgIDs);
-        this.textures = loadTexture(gl, this.image);
+        this.textures = [];
+        for (let i=0; i<imgIDs.length; i++) {
+          this.textures.push(loadTexture(gl,
+              document.getElementById(imgIDs[i])));
+        }
     }
     if (indices!= null) {
         this.indexCount = indices.length;
@@ -75,10 +142,27 @@ ShadedTriangleMesh.prototype.render = function(gl, model, view, projection) {
             gl.vertexAttribPointer(textCoordAttrib, 2, gl.FLOAT, false, 0, 0);
         }
 
-        let u_image0Location = gl.getUniformLocation(this.shaderProgram, "sampler");
-        gl.uniform1i(u_image0Location, 0);  // texture unit 0
-        gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, this.textures[0]);
+        for(var i=0; i<this.textures.length;i++) {
+            let sampler = gl.getUniformLocation(this.shaderProgram, samplers[i]);
+            gl.uniform1i(sampler, i);  // texture unit 0
+            gl.activeTexture(gl.TEXTURE0+i);
+            gl.bindTexture(gl.TEXTURE_2D, this.textures[i]);
+        }
+
+        //pass in the tan and bit attributes
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.tanVbo);
+        var positionAttrib = gl.getAttribLocation(this.shaderProgram, "Tangent");
+        if (positionAttrib >= 0) {
+            gl.enableVertexAttribArray(positionAttrib);
+            gl.vertexAttribPointer(positionAttrib, 3, gl.FLOAT, false, 0, 0);
+        }
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.bitVbo);
+        var positionAttrib = gl.getAttribLocation(this.shaderProgram, "Bitangent");
+        if (positionAttrib >= 0) {
+            gl.enableVertexAttribArray(positionAttrib);
+            gl.vertexAttribPointer(positionAttrib, 3, gl.FLOAT, false, 0, 0);
+        }
     }
 
     //For now this check lets us render objects indices and without
@@ -91,26 +175,22 @@ ShadedTriangleMesh.prototype.render = function(gl, model, view, projection) {
 //This function loads a active texture into in GL from an image file
 //elementID: The id name of imported image in index.html
 //textureNum = gl.TEXTURE0 for 1st, gl.TEXTURE1 for 2nd, etc..
-function loadTexture(gl, images) {
+function loadTexture(gl, image) {
     /*let len = images.length;
     if(len > gl.getParameter(gl.MAX_VERTEX_TEXTURE_IMAGE_UNITS))
         console.error("Too many textures supplied")*/
-    let textures = [];
-    for (let i = 0; i < 2; ++i) {
-        let texture = gl.createTexture();
-        gl.bindTexture(gl.TEXTURE_2D, texture);
+        
+    let texture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, texture);
 
-        // Set the parameters so we can render any size image.
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    // Set the parameters so we can render any size image.
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 
-        // Upload the image into the texture
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, images);
+    // Upload the image into the texture
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
 
-        // add the texture to the array of textures.
-        textures.push(texture);
-    }
-    return textures;
+    return texture;
 }

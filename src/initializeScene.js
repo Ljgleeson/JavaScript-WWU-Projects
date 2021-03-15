@@ -21,7 +21,6 @@ var createScene = function(canvas, gl) {
       this.planet1 = new ObjectMesh()
       ... etc */
     //Define each objects textures at an array of ids here
-    let cubeIDs = ["one"];
     let sunId = ["sun"];
     let planet1Id = ["planet1"];
     let planet2Id = ["planet2"];
@@ -30,7 +29,7 @@ var createScene = function(canvas, gl) {
     //Define unique Objects here (new ShadedTriangleMesh() per object)
     var out = parseOBJ(rocket_obj);
     var sp = parseOBJ(sphere_obj);
-
+    
     // FOR DEBUGGING: Splines
     /*xcord = document.getElementById("xcor");
     zcord = document.getElementById("zcor");*/
@@ -66,9 +65,9 @@ var createScene = function(canvas, gl) {
     this.sphereMesh2 = new ShadedTriangleMesh(gl, sp.position, sp.texcoord, sp.normal, null, TextureVertShader, TextureFragShader, planet2Id);
     this.sphereMesh3 = new ShadedTriangleMesh(gl, sp.position, sp.texcoord, sp.normal, null, TextureVertShader, TextureFragShader, planet3Id);
     this.sun = new ShadedTriangleMesh(gl, sp.position, sp.texcoord, sp.normal, null, TextureVertShader, TextureFragShader, sunId);
-    //this.cubeMesh = new ShadedTriangleMesh(gl, CubePositions, CubeUVs, CubeNormals, CubeIndices, TextureVertShader, TextureFragShader, cubeIDs);
-    this.skybox = new Skybox(gl, SkyboxVertSource, SkyboxFragSource);
     
+    this.skybox = new Skybox(gl, SkyboxVertSource, SkyboxFragSource);
+
     gl.enable(gl.DEPTH_TEST);
 }
 
@@ -76,7 +75,7 @@ var createScene = function(canvas, gl) {
  and objects in the scene*/
 createScene.prototype.render = function(canvas, gl, w, h) {
     //Change canvas background color here
-    //Set the paint color and then paint the background of the canvas <--------- This may be where the skybox enters the chat
+    //Set the paint color and then paint the background of the canvas
     gl.clearColor(0.5, 0.5, 0.5, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.depthFunc(gl.LEQUAL);
@@ -85,15 +84,15 @@ createScene.prototype.render = function(canvas, gl, w, h) {
     this.rocketSpline.setT(delta * CONSTANT_T);
     // Calculate the rocket's X and Z coordinates
     let rocket_xz = this.rocketSpline.eval_direct();
-    // FOR DEBUGGING: Splines
-    /*xcord.innerHTML = rocket_xz[0];
-    zcord.innerHTML = rocket_xz[1];*/
+        // FOR DEBUGGING: Splines
+        /*xcord.innerHTML = rocket_xz[0];
+        zcord.innerHTML = rocket_xz[1];*/
 
     //Define all transformation matrices here
     let projection = SimpleMatrix.perspective(45, w/h, 0.1, 100);
     let sbView = SimpleMatrix.rotate(this.cameraAngleX, 0, 1, 0).multiply(
         SimpleMatrix.rotate(this.cameraAngleY, 1, 0, 0));
-    let view = SimpleMatrix.multiply(sbView, SimpleMatrix.translate(0, 1, 15));
+        let view = SimpleMatrix.multiply(sbView, SimpleMatrix.translate(0, 1, 15));
 
     //Define each objects model matrix here
     let rotation = SimpleMatrix.rotate(Date.now()/25, 0, -1, 0);
@@ -102,7 +101,7 @@ createScene.prototype.render = function(canvas, gl, w, h) {
     let translate1 = SimpleMatrix.translate(30,1, -5);
     let scale1 = SimpleMatrix.scale(5,5,5);
     let sphereModel1 = SimpleMatrix.multiply(translate1,scale1);
-    
+
     let translate2 = SimpleMatrix.translate(0, 2, -50);
     let sphereModel2 =   SimpleMatrix.multiply(translate2, scale1);
 
@@ -124,7 +123,6 @@ createScene.prototype.render = function(canvas, gl, w, h) {
     //Render each object in the mesh here
     //rocketModel.multiply(SimpleMatrix.rotate(90, 0, 0, 1))
     this.rocketMesh.render(gl, rocketModel, view, projection);
-    //this.cubeMesh.render(gl, cubeModel, SimpleMatrix.multiply(rocketModel,view), projection);
     this.sphereMesh1.render(gl, sphereModel1, view, projection);
     this.sphereMesh2.render(gl, sphereModel2, view, projection);
     this.sphereMesh3.render(gl, sphereModel3, view, projection);
@@ -161,7 +159,7 @@ function initialize(canvasId) {
     var renderWidth, renderHeight;
     function computeCanvasSize() {
         //This line sets the width to the window width if window width is less than 1600, otherwise w=1600
-        renderWidth = Math.min(canvas.parentNode.clientWidth , 820);
+        renderWidth = Math.min(canvas.parentNode.clientWidth , 1600);
         //This line enforces a 16:9 aspect ratio
         renderHeight = Math.floor(renderWidth*9.0/16.0);
         canvas.width = renderWidth;
