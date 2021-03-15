@@ -16,6 +16,8 @@ var createScene = function(canvas, gl) {
     //Store any attributes relevant to calculations
     this.cameraAngleY = 0;
     this.cameraAngleX = 0;
+    this.previousRocketX = 0;
+    this.previousRocketZ = 0;
     /*Render each object as a mesh with ObjectMesh()
       this.rocket = new ObjectMesh()
       this.planet1 = new ObjectMesh()
@@ -32,7 +34,9 @@ var createScene = function(canvas, gl) {
     
     // FOR DEBUGGING: Splines
     /*xcord = document.getElementById("xcor");
-    zcord = document.getElementById("zcor");*/
+    zcord = document.getElementById("zcor");
+    xrota = document.getElementById("xrot");
+    zrota = document.getElementById("zrot");*/
 
     // Planet 1 = ( 30,  1,  -5), scaled by 5
     // Planet 2 = (  0,  2, -50), scaled by 5
@@ -40,21 +44,21 @@ var createScene = function(canvas, gl) {
 
     // Rocket spline path: X-control points
     var rocketCtrlX = [
-        [  0, 10, 40, 40],
-        [ 40, 40, 15,  0],
-        [  0,-15,-25,  0],
-        [  0, 25, 10,  0],
-        [  0,-10,-25,-40],
-        [-40,-50,-10,  0]
+        [  0, 10, 40, 40], // 1
+        [ 40, 40, 15,  0], // 2
+        [  0,-15,-25,  0], // 3
+        [  0, 25, 10,  0], // 4
+        [  0,-10,-25,-40], // 5
+        [-40,-55,-10,  0]  // 6
     ];
     // Rocket spline path: Z-control points
     var rocketCtrlZ = [
-        [  0, 15, 15, -5],
-        [ -5,-25,-20,-25],
-        [-25,-30,-65,-65],
-        [-65,-65,-40,-25],
-        [-25,-15, 30, 15],
-        [ 15,-15,-15,  0]
+        [  0, 15, 15, -5], // 1
+        [ -5,-25,-20,-25], // 2
+        [-25,-30,-65,-65], // 3
+        [-65,-65,-40,-25], // 4
+        [-25,-10, 35, 15], // 5
+        [ 15, -5,-15,  0]  // 6
     ];
     // Rocket speed values
     var rocketSpeeds = [1, 1, 1, 1, 1, 1];
@@ -84,17 +88,32 @@ createScene.prototype.render = function(canvas, gl, w, h) {
     this.rocketSpline.setT(delta * CONSTANT_T);
     // Calculate the rocket's X and Z coordinates
     let rocket_xz = this.rocketSpline.eval_direct();
+
+    // Generate the angle of direction that the rocket is heading towards
+    let rocketVelocityVec = [rocket_xz[0]-this.previousRocketX, rocket_xz[1]-this.previousRocketZ];
+    let rocketDirectionRot = Math.atan(rocketVelocityVec[1]/rocketVelocityVec[0]);
+    rocketDirectionRot = rocketDirectionRot * 180 / Math.PI;
+    if (rocketVelocityVec[0] < 0) {
+        rocketDirectionRot = rocketDirectionRot + 180;
+    }
+    // Store previous x-z coordinates for next frame
+    this.previousRocketX = rocket_xz[0];
+    this.previousRocketZ = rocket_xz[1];
+
         // FOR DEBUGGING: Splines
         /*xcord.innerHTML = rocket_xz[0];
-        zcord.innerHTML = rocket_xz[1];*/
+        zcord.innerHTML = rocket_xz[1];
+        xrota.innerHTML = rocketDirectionRot;
+        zrota.innerHTML = rocketDirectionRot;*/
 
     //Define all transformation matrices here
-    let projection = SimpleMatrix.perspective(45, w/h, 0.1, 100);
-    let sbView = SimpleMatrix.rotate(this.cameraAngleX, 0, 1, 0).multiply(
-        SimpleMatrix.rotate(this.cameraAngleY, 1, 0, 0));
-        let view = SimpleMatrix.multiply(sbView, SimpleMatrix.translate(0, 1, 15));
+    let projection = SimpleMatrix.perspective(65, w/h, 0.1, 300);
+    let sbView = SimpleMatrix.rotate(this.cameraAngleX, 0, 1, 0)
+        .multiply(SimpleMatrix.rotate(this.cameraAngleY, 1, 0, 0));
+    let view = SimpleMatrix.multiply(sbView, SimpleMatrix.translate(0, 0.2, 2));
 
     //Define each objects model matrix here
+    // TODO: Marked for removal, these two lines
     let rotation = SimpleMatrix.rotate(Date.now()/25, 0, -1, 0);
     let cubeModel = rotation;
 
@@ -116,10 +135,12 @@ createScene.prototype.render = function(canvas, gl, w, h) {
     //let rocketModel = SimpleMatrix.translate(8*Math.cos(Date.now()/2000), 0, -8*Math.sin(Date.now()/2000)).multiply(
       //  SimpleMatrix.rotate(90, 0, 0, 1));
     let rocketModel = SimpleMatrix.translate(rocket_xz[0], 0, rocket_xz[1])
-        .multiply(SimpleMatrix.rotate(90, 0, 0, -180))
-        .multiply(SimpleMatrix.scale(0.5, 0.5, 0.5));
+        .multiply(SimpleMatrix.rotate(90, 0, 0, -1))
+        .multiply(SimpleMatrix.scale(0.2, 0.2, 0.2));
+    rocketModel = SimpleMatrix.multiply(rocketModel, SimpleMatrix.rotate(rocketDirectionRot, 1, 0, 0));
 
     view = SimpleMatrix.multiply(SimpleMatrix.translate(rocket_xz[0], 0, rocket_xz[1]), view);
+
     //Render each object in the mesh here
     //rocketModel.multiply(SimpleMatrix.rotate(90, 0, 0, 1))
     this.rocketMesh.render(gl, rocketModel, view, projection);
