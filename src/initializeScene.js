@@ -24,14 +24,14 @@ var createScene = function(canvas, gl) {
       ... etc */
     //Define each objects textures at an array of ids here
     let sunId = ["sun"];
-    let planet1Id = ["planet1"];
-    let planet2Id = ["planet2"];
-    let planet3Id = ["planet3"];
+    let planet1Id = ["planet1", "normal1"];
+    let planet2Id = ["planet2", "normal2"];
+    let planet3Id = ["planet3", "normal2"];
     //let skyboxIDs = ["two"];
     //Define unique Objects here (new ShadedTriangleMesh() per object)
     var out = parseOBJ(rocket_obj);
     var sp = parseOBJ(sphere_obj);
-    
+
     // FOR DEBUGGING: Splines
     /*xcord = document.getElementById("xcor");
     zcord = document.getElementById("zcor");
@@ -65,11 +65,11 @@ var createScene = function(canvas, gl) {
     this.rocketSpline = new Splines(rocketCtrlX, rocketCtrlZ, rocketSpeeds);
 
     this.rocketMesh = new ShadedTriangleMesh(gl, out.position, null, out.normal, null, VertexSource, FragmentSource);
-    this.sphereMesh1 = new ShadedTriangleMesh(gl, sp.position, sp.texcoord, sp.normal, null, TextureVertShader, TextureFragShader, planet1Id);
-    this.sphereMesh2 = new ShadedTriangleMesh(gl, sp.position, sp.texcoord, sp.normal, null, TextureVertShader, TextureFragShader, planet2Id);
-    this.sphereMesh3 = new ShadedTriangleMesh(gl, sp.position, sp.texcoord, sp.normal, null, TextureVertShader, TextureFragShader, planet3Id);
-    this.sun = new ShadedTriangleMesh(gl, sp.position, sp.texcoord, sp.normal, null, TextureVertShader, TextureFragShader, sunId);
-    
+    this.sphereMesh1 = new ShadedTriangleMesh(gl, sp.position, sp.texcoord, sp.normal, null, NormalVertSource, NormalFragSource, planet1Id);
+    this.sphereMesh2 = new ShadedTriangleMesh(gl, sp.position, sp.texcoord, sp.normal, null, NormalVertSource, NormalFragSource, planet2Id);
+    this.sphereMesh3 = new ShadedTriangleMesh(gl, sp.position, sp.texcoord, sp.normal, null, NormalVertSource, NormalFragSource, planet3Id);
+    this.sun = new ShadedTriangleMesh(gl, sp.position, sp.texcoord, sp.normal, null, TextureVertShader, SunFragShader, sunId);
+
     this.skybox = new Skybox(gl, SkyboxVertSource, SkyboxFragSource);
 
     gl.enable(gl.DEPTH_TEST);
