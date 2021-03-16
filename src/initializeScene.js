@@ -23,7 +23,7 @@ var createScene = function(canvas, gl) {
       this.planet1 = new ObjectMesh()
       ... etc */
     //Define each objects textures at an array of ids here
-    let rocketId = ["rocket"];
+    let rocketId = ["rocket", "normal4"];
     let sunId = ["sun"];
     let deathId = ["death", "normal1"];
     let planet1Id = ["planet1", "normal1"];
@@ -67,7 +67,7 @@ var createScene = function(canvas, gl) {
     var rocketSpeeds = [1, 1, 1, 1, 1, 1];
     this.rocketSpline = new Splines(rocketCtrlX, rocketCtrlZ, rocketSpeeds);
 
-    this.rocketMesh = new ShadedTriangleMesh(gl, out.position, out.texcoord, out.normal, null, TextureVertShader, TextureFragShader, rocketId);
+    this.rocketMesh = new ShadedTriangleMesh(gl, out.position, out.texcoord, out.normal, null, NormalVertSource, NormalFragSource, rocketId);
     this.sphereMesh1 = new ShadedTriangleMesh(gl, sp.position, sp.texcoord, sp.normal, null, NormalVertSource, NormalFragSource, planet1Id);
     this.sphereMesh2 = new ShadedTriangleMesh(gl, sp.position, sp.texcoord, sp.normal, null, NormalVertSource, NormalFragSource, planet2Id);
     this.sphereMesh3 = new ShadedTriangleMesh(gl, sp.position, sp.texcoord, sp.normal, null, TextureVertShader, TextureFragShader, planet3Id);
