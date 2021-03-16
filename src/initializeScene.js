@@ -9,7 +9,7 @@
     function createIndexBuffer(gl, indexData)
 */
 
-const CONSTANT_T = 0.0001;
+const CONSTANT_T = 0.00005;
 
 //This object stores the scene data
 var createScene = function(canvas, gl) {
@@ -23,10 +23,13 @@ var createScene = function(canvas, gl) {
       this.planet1 = new ObjectMesh()
       ... etc */
     //Define each objects textures at an array of ids here
+    let rocketId = ["rocket"];
     let sunId = ["sun"];
+    let deathId = ["death", "normal1"];
     let planet1Id = ["planet1", "normal1"];
     let planet2Id = ["planet2", "normal2"];
-    let planet3Id = ["planet3", "normal2"];
+    let moonId = ["moon", "normal2"];
+    let planet3Id = ["planet3"];
     //let skyboxIDs = ["two"];
     //Define unique Objects here (new ShadedTriangleMesh() per object)
     var out = parseOBJ(rocket_obj);
@@ -64,10 +67,12 @@ var createScene = function(canvas, gl) {
     var rocketSpeeds = [1, 1, 1, 1, 1, 1];
     this.rocketSpline = new Splines(rocketCtrlX, rocketCtrlZ, rocketSpeeds);
 
-    this.rocketMesh = new ShadedTriangleMesh(gl, out.position, null, out.normal, null, VertexSource, FragmentSource);
+    this.rocketMesh = new ShadedTriangleMesh(gl, out.position, out.texcoord, out.normal, null, TextureVertShader, TextureFragShader, rocketId);
     this.sphereMesh1 = new ShadedTriangleMesh(gl, sp.position, sp.texcoord, sp.normal, null, NormalVertSource, NormalFragSource, planet1Id);
     this.sphereMesh2 = new ShadedTriangleMesh(gl, sp.position, sp.texcoord, sp.normal, null, NormalVertSource, NormalFragSource, planet2Id);
-    this.sphereMesh3 = new ShadedTriangleMesh(gl, sp.position, sp.texcoord, sp.normal, null, NormalVertSource, NormalFragSource, planet3Id);
+    this.sphereMesh3 = new ShadedTriangleMesh(gl, sp.position, sp.texcoord, sp.normal, null, TextureVertShader, TextureFragShader, planet3Id);
+    this.deathStar = new ShadedTriangleMesh(gl, sp.position, sp.texcoord, sp.normal, null, NormalVertSource, NormalFragSource, deathId);
+    this.moonMesh = new ShadedTriangleMesh(gl, sp.position, sp.texcoord, sp.normal, null, NormalVertSource, NormalFragSource, moonId);
     this.sun = new ShadedTriangleMesh(gl, sp.position, sp.texcoord, sp.normal, null, TextureVertShader, SunFragShader, sunId);
 
     this.skybox = new Skybox(gl, SkyboxVertSource, SkyboxFragSource);
@@ -107,30 +112,50 @@ createScene.prototype.render = function(canvas, gl, w, h) {
         zrota.innerHTML = rocketDirectionRot;*/
 
     //Define all transformation matrices here
-    let projection = SimpleMatrix.perspective(65, w/h, 0.1, 300);
+    let projection = SimpleMatrix.perspective(65, w/h, 0.1, 400);
     let sbView = SimpleMatrix.rotate(this.cameraAngleX, 0, 1, 0)
         .multiply(SimpleMatrix.rotate(this.cameraAngleY, 1, 0, 0));
     let view = SimpleMatrix.multiply(sbView, SimpleMatrix.translate(0, 0.2, 2));
 
     //Define each objects model matrix here
     // TODO: Marked for removal, these two lines
-    let rotation = SimpleMatrix.rotate(Date.now()/25, 0, -1, 0);
-    let cubeModel = rotation;
+    let sphere1_rotation = SimpleMatrix.rotate(Date.now()/100, 0, -1, 0);
+    let sphere2_rotation = SimpleMatrix.rotate(Date.now()/100, -0.5, -0.5, 0);
+    let sphere3_rotation = SimpleMatrix.rotate(Date.now()/100, 0, -.9, -.1);
+    let sun_rotation = SimpleMatrix.rotate(Date.now()/500, 0, -1, 0);
+    let moon_rotation = SimpleMatrix.rotate(Date.now()/100, 0, -1, 0);
+
+    
 
     let translate1 = SimpleMatrix.translate(30,1, -5);
     let scale1 = SimpleMatrix.scale(5,5,5);
     let sphereModel1 = SimpleMatrix.multiply(translate1,scale1);
+    sphereModel1 = SimpleMatrix.multiply(sphereModel1, sphere1_rotation);
 
     let translate2 = SimpleMatrix.translate(0, 2, -50);
     let sphereModel2 =   SimpleMatrix.multiply(translate2, scale1);
+    sphereModel2 = SimpleMatrix.multiply(sphereModel2, sphere2_rotation);
 
     let translate3 = SimpleMatrix.translate(-30, 1, 5);
     let scale2 = SimpleMatrix.scale(7,7,7);
     let sphereModel3 = SimpleMatrix.multiply(translate3,scale2);
+    sphereModel3 = SimpleMatrix.multiply(sphereModel3, sphere3_rotation);
 
-    let translate4 = SimpleMatrix.translate(15, 30, 80);
-    let scaleSun = SimpleMatrix.scale(22,22,22);
+    let translate4 = SimpleMatrix.translate(15, 60, 210);
+    let scaleSun = SimpleMatrix.scale(20,20,20);
     let sunModel = SimpleMatrix.multiply(translate4,scaleSun);
+    sunModel = SimpleMatrix.multiply(sunModel, sun_rotation);
+
+    let translate5 = SimpleMatrix.translate(200, 120, -200);
+    let scaleDeath = SimpleMatrix.scale(8,8,8);
+    let deathModel = SimpleMatrix.multiply(translate5, scaleDeath);
+
+    let translate6 = SimpleMatrix.translate(0, 8, -51);
+    let moonScale = SimpleMatrix.scale(0.8,0.8,0.8);
+    //let moonModel = SimpleMatrix.multiply(translate6, moonScale);
+    //moonModel = SimpleMatrix.multiply(moonModel, moon_rotation);
+    let moonModel = moon_rotation;
+    
 
     //let rocketModel = SimpleMatrix.translate(8*Math.cos(Date.now()/2000), 0, -8*Math.sin(Date.now()/2000)).multiply(
       //  SimpleMatrix.rotate(90, 0, 0, 1));
@@ -147,7 +172,9 @@ createScene.prototype.render = function(canvas, gl, w, h) {
     this.sphereMesh1.render(gl, sphereModel1, view, projection);
     this.sphereMesh2.render(gl, sphereModel2, view, projection);
     this.sphereMesh3.render(gl, sphereModel3, view, projection);
-    this.sun.render(gl, sunModel, view, projection)
+    this.deathStar.render(gl, deathModel, view, projection);
+    this.moonMesh.render(gl, moonModel, SimpleMatrix.multiply(sphereModel2, view), projection);
+    this.sun.render(gl, sunModel, view, projection);
     this.skybox.render(gl, sbView, projection);
 }
 
