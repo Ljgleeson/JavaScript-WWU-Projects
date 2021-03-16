@@ -72,7 +72,8 @@ var createScene = function(canvas, gl) {
     this.sphereMesh2 = new ShadedTriangleMesh(gl, sp.position, sp.texcoord, sp.normal, null, NormalVertSource, NormalFragSource, planet2Id);
     this.sphereMesh3 = new ShadedTriangleMesh(gl, sp.position, sp.texcoord, sp.normal, null, TextureVertShader, TextureFragShader, planet3Id);
     this.deathStar = new ShadedTriangleMesh(gl, sp.position, sp.texcoord, sp.normal, null, NormalVertSource, NormalFragSource, deathId);
-    this.moonMesh = new ShadedTriangleMesh(gl, sp.position, sp.texcoord, sp.normal, null, NormalVertSource, NormalFragSource, moonId);
+    this.moonMesh1 = new ShadedTriangleMesh(gl, sp.position, sp.texcoord, sp.normal, null, NormalVertSource, NormalFragSource, moonId);
+    this.moonMesh2 = new ShadedTriangleMesh(gl, sp.position, sp.texcoord, sp.normal, null, NormalVertSource, NormalFragSource, moonId);
     this.sun = new ShadedTriangleMesh(gl, sp.position, sp.texcoord, sp.normal, null, TextureVertShader, SunFragShader, sunId);
 
     this.skybox = new Skybox(gl, SkyboxVertSource, SkyboxFragSource);
@@ -119,9 +120,9 @@ createScene.prototype.render = function(canvas, gl, w, h) {
 
     //Define each objects model matrix here
     // TODO: Marked for removal, these two lines
-    let sphere1_rotation = SimpleMatrix.rotate(Date.now()/100, 0, -1, 0);
-    let sphere2_rotation = SimpleMatrix.rotate(Date.now()/100, -0.5, -0.5, 0);
-    let sphere3_rotation = SimpleMatrix.rotate(Date.now()/100, 0, -.9, -.1);
+    let sphere1_rotation = SimpleMatrix.rotate(Date.now()/200, 0, -1, 0);
+    let sphere2_rotation = SimpleMatrix.rotate(Date.now()/200, -0.5, -0.5, 0);
+    let sphere3_rotation = SimpleMatrix.rotate(Date.now()/200, 0, -.9, -.1);
     let sun_rotation = SimpleMatrix.rotate(Date.now()/500, 0, -1, 0);
     let moon_rotation = SimpleMatrix.rotate(Date.now()/100, 0, -1, 0);
 
@@ -154,7 +155,8 @@ createScene.prototype.render = function(canvas, gl, w, h) {
     let moonScale = SimpleMatrix.scale(0.8,0.8,0.8);
     //let moonModel = SimpleMatrix.multiply(translate6, moonScale);
     //moonModel = SimpleMatrix.multiply(moonModel, moon_rotation);
-    let moonModel = moon_rotation;
+    let moonModel1 = moon_rotation;
+    let moonModel2 = moon_rotation;
     
 
     //let rocketModel = SimpleMatrix.translate(8*Math.cos(Date.now()/2000), 0, -8*Math.sin(Date.now()/2000)).multiply(
@@ -173,15 +175,18 @@ createScene.prototype.render = function(canvas, gl, w, h) {
     this.sphereMesh2.render(gl, sphereModel2, view, projection);
     this.sphereMesh3.render(gl, sphereModel3, view, projection);
     this.deathStar.render(gl, deathModel, view, projection);
-    this.moonMesh.render(gl, moonModel, SimpleMatrix.multiply(sphereModel2, view), projection);
+    this.moonMesh1.render(gl, moonModel1, SimpleMatrix.multiply(sphereModel2, view), projection);
+    this.moonMesh2.render(gl, moonModel2, SimpleMatrix.multiply(sphereModel1, view), projection);
     this.sun.render(gl, sunModel, view, projection);
     this.skybox.render(gl, sbView, projection);
 }
 
 //This method updates the x and y camera angles when the mouse is dragged in the canvas
 createScene.prototype.dragCamera = function(dx,dy) {
-    this.cameraAngleY = Math.min(Math.max(this.cameraAngleY - dy*0.5, -180), 180);
-    this.cameraAngleX = Math.min(Math.max(this.cameraAngleX - dx*0.5, -180), 180);
+   // this.cameraAngleY = Math.min(Math.max(this.cameraAngleY - dy*0.5, -180), 180);
+   this.cameraAngleY = this.cameraAngleY - dy*0.5;
+   this.cameraAngleX = this.cameraAngleX - dx*0.5;
+  // this.cameraAngleX = Math.min(Math.max(this.cameraAngleX - dx*0.5, -180), 180);
 }
 
 //Initialize the canvas and contains the main render loop
