@@ -89,7 +89,7 @@ var TextureFragShader = `
     varying vec3 vNormal;
 
     //Ambient light
-    const vec3 ka = vec3(0.1, 0.2, 0.2);
+    const vec3 ka = vec3(0.2, 0.2, 0.2);
     //Directional light (aka Sun position in world coordinates)
     const vec3 direction = normalize(vec3(15, 30, 80));
     const vec3 color = vec3(0.6, 0.6, 0.5);
@@ -97,9 +97,9 @@ var TextureFragShader = `
     void main() {
       float d = dot(normalize(vNormal),direction);
 
-      vec3 lightIntensity = color * max(0.0, d);
+      vec3 lightIntensity = ka + color * max(0.0, d);
       vec4 kd = texture2D(sampler, vUV);
-      gl_FragColor = 0.2*vec4(ka,1.0) + 0.8*kd * vec4(lightIntensity, 1.0);
+      gl_FragColor = kd * vec4(lightIntensity, 1.0);
     }
 `;
 
