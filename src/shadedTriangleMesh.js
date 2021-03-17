@@ -169,7 +169,7 @@ ShadedTriangleMesh.prototype.render = function(gl, model, view, projection) {
     if (this.indexCount > 0)
         gl.drawElements(gl.TRIANGLES, this.indexCount, gl.UNSIGNED_SHORT, 0);
     else
-        gl.drawArrays(gl.TRIANGLES, 0, this.drawCount);
+        gl.drawArrays(gl.TRIANGLES, 0, this.drawCount/3);
 }
 
 //This function loads a active texture into in GL from an image file

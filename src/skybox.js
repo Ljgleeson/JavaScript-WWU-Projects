@@ -49,7 +49,7 @@ Skybox.prototype.render = function(gl, view, projection) {
   let skyboxLocation = gl.getUniformLocation(this.shaderProgram, "sampler");
   gl.uniform1i(skyboxLocation, 0);
 
-  gl.drawArrays(gl.TRIANGLES, 0, 36);
+  gl.drawArrays(gl.TRIANGLES, 0, 6);
 }
 
 function loadSkyBox(gl, sbFaces) {
